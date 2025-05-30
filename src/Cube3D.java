@@ -1,7 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -11,6 +9,7 @@ public class Cube3D extends JFrame {
 	int centerY = getHeight() / 2;
 	
 	int[][] vertexTable = new int[][]{
+	//  {X, Y, Z}
 		{centerX + 50, centerY + 50, 50}, // A:0
 		{centerX + 50, centerY - 50, 50}, // B:1
 		{centerX - 50, centerY - 50, 50}, // C:2
@@ -23,6 +22,7 @@ public class Cube3D extends JFrame {
 	
 	int[][] projVTable = new int[8][2];
 	int[][] edgeTable = {
+	//      {Vertex_A to Vertex_B}
 			{0, 1}, // AB:0
 			{1, 2}, // BC:1
 			{2, 3}, // CD:2
@@ -78,6 +78,8 @@ public class Cube3D extends JFrame {
 			protected void paintComponent(Graphics g) {
 				super.paintComponent(g);
 				Cube3D.this.paintCube(g);
+				System.out.printf("[Width: %d | Height: %d]\n", getWidth(), getHeight());
+				System.out.println(Arrays.deepToString(projVTable));
 			}
 		};
 		
@@ -85,12 +87,13 @@ public class Cube3D extends JFrame {
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setResizable(true);
 		this.setIconImage(new ImageIcon("res/WindowIcon.png").getImage());
-		this.setPreferredSize(new Dimension(500, 500));
+//		this.setPreferredSize(new Dimension(500, 500));
+		this.setPreferredSize(new Dimension(514, 537));
 		
 		this.add(panel);
 		panel.setBackground(Color.BLACK);
 		
-		JSlider yawSlider = new JSlider(-180, 180, 0);
+		JSlider yawSlider = new JSlider(0, 360, 0);
 		yawSlider.setPreferredSize(new Dimension(this.getWidth(), 10));
 		yawSlider.setAlignmentY(SwingConstants.BOTTOM);
 		yawSlider.setName("Yaw");
@@ -99,7 +102,7 @@ public class Cube3D extends JFrame {
 			panel.repaint();
 		});
 		
-		JSlider pitchSlider = new JSlider(-180, 180, 0);
+		JSlider pitchSlider = new JSlider(0, 360, 0);
 		pitchSlider.setPreferredSize(new Dimension(this.getWidth(), 10));
 		pitchSlider.setAlignmentY(SwingConstants.BOTTOM);
 		pitchSlider.setName("Pitch");
@@ -108,7 +111,7 @@ public class Cube3D extends JFrame {
 			panel.repaint();
 		});
 		
-		JSlider rollSlider = new JSlider(-180, 180, 0);
+		JSlider rollSlider = new JSlider(0, 360, 0);
 		rollSlider.setPreferredSize(new Dimension(this.getWidth(), 10));
 		rollSlider.setAlignmentY(SwingConstants.BOTTOM);
 		rollSlider.setName("Roll");
@@ -177,8 +180,8 @@ public class Cube3D extends JFrame {
 						}
 						
 						counter = (counter + 1) % 360;
-						if (counter == 180) {
-							counter = -180;
+						if (counter == 0) {
+							counter = 0;
 						}
 					}
 				}).start();
@@ -210,9 +213,10 @@ public class Cube3D extends JFrame {
 		
 		for (int i = 0; i < vertexTable.length; i++) {
 			int[] v = vertexTable[i];
-			int[] translatedV = shift(v);
-			int[] rotatedV = rotateVertex(translatedV);
-			int[] projVertex = projectVertex(rotatedV);
+			int[] centeredV = unshift(v);
+			int[] rotatedV = rotateVertex(centeredV);
+			int[] translatedV = shift(rotatedV);
+			int[] projVertex = projectVertex(translatedV);
 			
 			// Calculate the distance from the viewer for depth sorting
 			distances[i] = Math.sqrt(Math.pow(rotatedV[0], 2) + Math.pow(rotatedV[1], 2) + Math.pow(rotatedV[2], 2));
@@ -273,16 +277,20 @@ public class Cube3D extends JFrame {
 		};
 		
 		int[] result = new int[3];
-		
+
 		result[0] = (int) Math.ceil(vertex[0] * rotationMatrix[0][0] + vertex[1] * rotationMatrix[1][0] + vertex[2] * rotationMatrix[2][0]);
 		result[1] = (int) Math.ceil(vertex[0] * rotationMatrix[0][1] + vertex[1] * rotationMatrix[1][1] + vertex[2] * rotationMatrix[2][1]);
 		result[2] = (int) Math.ceil(vertex[0] * rotationMatrix[0][2] + vertex[1] * rotationMatrix[1][2] + vertex[2] * rotationMatrix[2][2]);
-		
+
 		return result;
 	}
 	
 	public int[] shift(int[] vertex) {
 		return new int[]{vertex[0] + xShift, vertex[1] + yShift, vertex[2] + zShift};
+	}
+
+	public int[] unshift(int[] vertex) {
+		return new int[]{-vertex[0], -vertex[1], -vertex[2]};
 	}
 	
 	public static void main(String[] args) {
